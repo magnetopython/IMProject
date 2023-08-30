@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 // 每个用户都有一个channel
@@ -35,9 +36,44 @@ func (this *User) Offline() {
 	this.server.BroadCast(this, "is offline")
 }
 
+// 给当前用户发消息
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 // 用户处理消息的业务
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+
+	if msg == "$who" {
+		//查询当前在线用户
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ": is online\n"
+			this.SendMsg(onlineMsg)
+		}
+		this.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		//消息格式：rename|jack
+		newName := strings.Split(msg, "|")[1]
+
+		//判断name是否存在
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.SendMsg("current username has been used")
+		} else {
+			this.server.mapLock.Lock()
+
+			delete(this.server.OnlineMap, this.Name)
+			this.server.OnlineMap[newName] = this
+
+			this.server.mapLock.Unlock()
+			this.Name = newName
+			this.SendMsg("update username successfully\n")
+		}
+	} else {
+		this.server.BroadCast(this, msg)
+	}
+
 }
 
 // 创建一个用户的API
