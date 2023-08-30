@@ -54,7 +54,7 @@ func (this *Server) BroadCast(user *User, msg string) {
 
 func (this *Server) Handler(conn net.Conn) {
 	//当前连接的业务
-	// fmt.Println("连接建立成功")
+	fmt.Println("连接建立成功")
 
 	user := NewUser(conn)
 
@@ -64,7 +64,7 @@ func (this *Server) Handler(conn net.Conn) {
 	this.mapLock.Unlock()
 
 	//广播当前用户上线消息
-	this.BroadCast(user, "已上线")
+	this.BroadCast(user, "is online")
 
 	//当前handler阻塞
 	select {}
